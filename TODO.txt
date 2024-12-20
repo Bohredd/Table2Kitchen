@@ -1,0 +1,2 @@
+1. Criar apis
+2. Arrumar docker para conseguir ligar o frontend também
