@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  django:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile 
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - table-2-kitchen-db
+      - redis  
+    env_file:
+      - .env 
+    environment:
+      - SERVICE=backend
+    command: ["bash", "-c", "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+    networks:
+      - backend
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile  
+    # ports:
+    #   - "3000:3000"
+    environment:
+      - SERVICE=frontend
+    command: ["npm", "run", "dev"]
+    networks:
+      - backend
+
+  table-2-kitchen-db:
+    image: postgres:13 
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_PORT: ${DB_PORT}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  
+    networks:
+      - backend
+
+  redis:
+    image: redis:latest
+    volumes:
+      - redis_data:/data  
+    networks:
+      - backend
+
+  celery:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile 
+    command: celery -A backend.celery_config.app worker --loglevel=info 
+    depends_on:
+      - redis  
+      - django 
+    env_file:
+      - .env 
+    networks:
+      - backend
+
+  celery-beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile 
+    command: celery -A backend.celery_config.app beat --loglevel=info 
+    depends_on:
+      - redis 
+      - django  
+    env_file:
+      - .env  
+    networks:
+      - backend
+
+volumes:
+  postgres_data:  
+  redis_data:
+
+networks:
+  backend:
+    driver: bridge 
