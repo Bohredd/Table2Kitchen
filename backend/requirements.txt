@@ -7,4 +7,4 @@ django-celery-beat==2.7.0
 django-celery-results==2.5.1
 psycopg2-binary==2.9.10
 importlib-metadata==8.5.0
-pillow==11.0.0
+pillow==11.0.0  
